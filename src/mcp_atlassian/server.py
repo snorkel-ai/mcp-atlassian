@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from mcp.server import Server
-from mcp.types import Resource, TextContent, Tool
+from mcp.types import Resource, TextContent, Tool, Prompt, PromptArgument, GetPromptResult, PromptMessage
 from pydantic import AnyUrl
 
 from .confluence import ConfluenceFetcher
@@ -946,7 +946,10 @@ async def list_tools() -> list[Tool]:
                                         '- Add labels: {"labels": ["frontend", "urgent"]}\n'
                                         '- Link to parent (for any issue type): {"parent": "PROJ-123"}\n'
                                         '- Set Fix Version/s: {"fixVersions": [{"id": "10020"}]}\n'
-                                        '- Custom fields: {"customfield_10010": "value"}'
+                                        '- Custom fields: {"customfield_10010": "value"}\n'
+                                        '- Set affected versions: {"versions": [{"name": "1.0"}]}\n'
+                                        '- Set priority: {"priority": {"name": "P2"}}\n'
+                                        '- Set issue type: {"issuetype": {"name": "Bug"}}'
                                     ),
                                     "default": "{}",
                                 },
@@ -1203,6 +1206,102 @@ async def list_tools() -> list[Tool]:
 
     return tools
 
+
+@app.list_prompts()
+async def list_prompts() -> list[Prompt]:
+    return [
+        Prompt(
+            name="jira_create_bug",
+            description="Create a new Jira bug ticket",
+            arguments=[
+                PromptArgument(
+                    name="summary",
+                    description="The summary of the issue",
+                ),
+                PromptArgument(
+                    name="description",
+                    description="The description of the issue",
+                ),
+                PromptArgument(
+                    name="priority",
+                    description="The priority of the issue",
+                ),
+                PromptArgument(
+                    name="versions",
+                    description="The versions of the product that are affected by the bug",
+                ),
+                PromptArgument(
+                    name="components",
+                    description="The components of the product that are affected by the bug",
+                ),
+            ],
+        )
+    ]
+
+@app.get_prompt()
+async def get_prompt(name: str, arguments: Any) -> GetPromptResult:
+    """Return prompt template for the specified prompt name."""
+    ctx = app.request_context.lifespan_context
+    
+    if name == "jira_create_bug":
+        # Extract arguments
+        summary = arguments.get("summary", "")
+        description = arguments.get("description", "")
+        priority = arguments.get("priority", "Medium")
+        versions = arguments.get("versions", "")
+        components = arguments.get("components", "")
+        
+        # Create the messages using PromptMessage with TextContent
+        # Convert system message to a user message that sets the context
+        context_message = PromptMessage(
+            role="user",
+            content=TextContent(
+                type="text",
+                text="You are a helpful assistant creating a bug report in Jira."
+            ),
+        )
+        
+        user_message = PromptMessage(
+            role="user",
+            content=TextContent(
+                type="text",
+                text=(
+                    f"Please create a Jira bug ticket with the following details:\n\n"
+                    f"Summary: {summary}\n"
+                    f"Description: {description}\n"
+                    f"Priority: {priority}\n"
+                    f"Affected Versions: {versions}\n"
+                    f"Components: {components}"
+                )
+            ),
+        )
+        
+        # assistant_message = PromptMessage(
+        #     role="assistant",
+        #     content=TextContent(
+        #         type="text",
+        #         text=(
+        #             f"I'll help you create a bug report in Jira with these details.\n\n"
+        #             f"Here's a formatted report that I can submit:\n\n"
+        #             f"**Summary**: {summary}\n\n"
+        #             f"**Description**:\n{description}\n\n"
+        #             f"**Steps to Reproduce**:\n1. \n2. \n3. \n\n"
+        #             f"**Expected Result**:\n\n"
+        #             f"**Actual Result**:\n\n"
+        #             f"**Priority**: {priority}\n"
+        #             f"**Affected Versions**: {versions}\n"
+        #             f"**Components**: {components}\n\n"
+        #             f"Would you like me to create this bug report now, or would you like to make any changes?"
+        #         )
+        #     ),
+        # )
+        
+        # Return a GetPromptResult object with the messages
+        return GetPromptResult(messages=[context_message, user_message])
+    
+    # Return empty GetPromptResult if prompt name is not recognized
+    return GetPromptResult(messages=[])
+    
 
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:

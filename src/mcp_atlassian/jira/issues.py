@@ -535,7 +535,7 @@ class IssuesMixin(UsersMixin):
 
             # Add description if provided
             if description:
-                fields["description"] = description
+                fields["customfield_10068"] = description
 
             # Add assignee if provided
             if assignee:
@@ -694,6 +694,16 @@ class IssuesMixin(UsersMixin):
 
         # Process each kwarg
         for key, value in kwargs.items():
+            if key.lower() == "versions":
+                fields["versions"] = value
+                logger.debug("Added versions from additional_fields: %s", value)
+                continue  # Handled versions
+
+            if key.lower() == "priority":
+                fields["priority"] = value
+                logger.debug("Added priority from additional_fields: %s", value)
+                continue  # Handled priority
+
             # Handle fixVersions specifically as it's a standard field often required
             if key.lower() == "fixversions":
                 fields["fixVersions"] = value
@@ -720,7 +730,7 @@ class IssuesMixin(UsersMixin):
                     )
                 continue  # Skip further processing for components
 
-            if key in ("epic_name", "epic_link", "parent"):
+            if key in ("epic_name", "epic_link", "parent", "versions", "priority"):
                 continue  # Handled separately
 
             # Check if this is a known field
