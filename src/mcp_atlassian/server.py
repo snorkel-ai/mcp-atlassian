@@ -940,7 +940,7 @@ async def list_tools() -> list[Tool]:
                                 "additional_fields": {
                                     "type": "string",
                                     "description": (
-                                        "Optional JSON string of additional fields to set. "
+                                        "Optional JSON string of additional fields to set. Don't add components in additional_fields."
                                         "Examples:\n"
                                         '- Set priority: {"priority": {"name": "High"}}\n'
                                         '- Add labels: {"labels": ["frontend", "urgent"]}\n'
@@ -950,6 +950,8 @@ async def list_tools() -> list[Tool]:
                                         '- Set affected versions: {"versions": [{"name": "1.0"}]}\n'
                                         '- Set priority: {"priority": {"name": "P2"}}\n'
                                         '- Set issue type: {"issuetype": {"name": "Bug"}}'
+                                        '- Set sprint: {"customfield_10020": 12345}\n'
+                                        '- Set story points: {"customfield_10041": 5}'
                                     ),
                                     "default": "{}",
                                 },
@@ -1003,7 +1005,12 @@ async def list_tools() -> list[Tool]:
                                     "description": (
                                         "A valid JSON object of fields to update as a string. "
                                         'Example: \'{"summary": "New title", "description": "Updated description", '
-                                        '"priority": {"name": "High"}, "assignee": {"name": "john.doe"}}\''
+                                        '- Set assignee: {"assignee": {"name": "john.doe"}}\n'
+                                        '- Set affected versions: {"versions": [{"name": "1.0"}]}\n'
+                                        '- Set priority: {"priority": {"name": "P2"}}\n'
+                                        '- Set issue type: {"issuetype": {"name": "Bug"}}'
+                                        '- Set sprint: {"customfield_10020": 12345}\n'
+                                        '- Set story points: {"customfield_10041": 5}'
                                     ),
                                 },
                                 "additional_fields": {
